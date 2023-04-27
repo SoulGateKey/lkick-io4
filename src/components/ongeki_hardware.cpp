@@ -1,4 +1,8 @@
+
 #include "stdinclude.h"
+#include <array>
+
+#include "pico/stdlib.h"
 
 #include "hardware/adc.h"
 #include "pico/bootrom.h"
@@ -7,26 +11,33 @@
 #include "scancode.h"
 
 namespace component {
-    // hello 5
-    const uint8_t PIN_MAP[10] = {
-            // L: A B C SIDE MENU
-            2, 4, 6, 14, 3,
-            // R: A B C SIDE MENU
-            10, 12, 13, 8, 7};
 
-    const uint8_t PIN_BIT[10] = {
-            // L: A B C SIDE MENU
-            1, 1, 1, 0, 1,
-            1, 1, 1, 0, 1};
-
-    const uint8_t SWITCH_INDEX[10] = {
-            0, 0, 0, 1, 1,
-            0, 1, 0, 0, 0
+    const uint8_t PIN_MAP[12] = {
+            BTN_L1_PIN, BTN_L2_PIN, BTN_L3_PIN, BTN_LSIDE_PIN, BTN_LMENU_PIN,
+            BTN_R1_PIN, BTN_R2_PIN, BTN_R3_PIN, BTN_RSIDE_PIN, BTN_RMENU_PIN,
+            BTN_TEST_PIN, BTN_SERV_PIN
+    };
+    const uint8_t LED_PINS[6] = {
+        LED_L1_PIN, LED_L2_PIN, LED_L3_PIN,
+        LED_R1_PIN, LED_R2_PIN, LED_R3_PIN
     };
 
-    const uint8_t SWITCH_OFFSET[10] = {
+    const uint8_t PIN_BIT[12] = {  // for keyboard mode
+            // L: A B C SIDE MENU
+            1, 1, 1, 0, 1,
+            1, 1, 1, 0, 1,
+            1, 1};
+
+    const uint8_t SWITCH_INDEX[12] = {
+            0, 0, 0, 1, 1,
+            0, 1, 0, 0, 0,
+            0,0
+    };
+
+    const uint8_t SWITCH_OFFSET[12] = {
             0, 5, 4, 15, 14,
-            1, 0, 15, 14, 13
+            1, 0, 15, 14, 13,
+            9,6
     };
 
     const uint8_t KEYBOARD_KEYS[10] = {
@@ -36,8 +47,17 @@ namespace component {
         USB_HID_SCANCODE_J, USB_HID_SCANCODE_K, USB_HID_SCANCODE_L, USB_HID_SCANCODE_U, USB_HID_SCANCODE_P
     };
 
-    auto lightColors = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 3,
-                                                          11, 6, PicoLed::FORMAT_GRB);
+
+
+    
+    auto LED_L1 = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_L1_PIN, 1, PicoLed::FORMAT_GRB);
+    auto LED_L2 = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 1, LED_L2_PIN, 1, PicoLed::FORMAT_GRB);
+    auto LED_L3 = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 2, LED_L3_PIN, 1, PicoLed::FORMAT_GRB);
+    auto LED_R1 = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 3, LED_R1_PIN, 1, PicoLed::FORMAT_GRB);
+    auto LED_R2 = PicoLed::addLeds<PicoLed::WS2812B>(pio1, 0, LED_R2_PIN, 1, PicoLed::FORMAT_GRB);
+    auto LED_R3 = PicoLed::addLeds<PicoLed::WS2812B>(pio1, 1, LED_R3_PIN, 1, PicoLed::FORMAT_GRB);
+    
+    std::array<PicoLed::PicoLedController, 6> leds = {LED_R1, LED_R2, LED_R3, LED_L1, LED_L2, LED_L3};
 
     bool hasI2cLever = false;
     uint8_t addr = 0b0000110;
@@ -45,22 +65,17 @@ namespace component {
     ResponsiveAnalogRead analog(LEVER_PIN, true, 0.0005);
     namespace ongeki_hardware {
         void init() {
+
             for (unsigned char i: PIN_MAP) {
                 gpio_init(i);
                 gpio_set_dir(i, GPIO_IN);
                 gpio_pull_up(i);
             }
-            gpio_init(5);
-            gpio_set_dir(5, GPIO_IN);
-            gpio_pull_up(5);
+            
             gpio_init(PICO_DEFAULT_LED_PIN);
             gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
-            lightColors.fill(PicoLed::RGB(255, 255, 255));
-            lightColors.show();
-
             // check i2c lever
-
             auto writeResult = i2c_write_blocking_until(i2c_default, addr,
                                                         &reg1, 1, true, delayed_by_ms(get_absolute_time(), 10));
             if (writeResult == PICO_ERROR_GENERIC || writeResult == PICO_ERROR_TIMEOUT) {
@@ -71,32 +86,30 @@ namespace component {
                 gpio_put(PICO_DEFAULT_LED_PIN, true);
             }
         }
-
-        uint bitPosMap[] =
-                {
-                        23, 20, 22, 19, 21, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6
-                };
-        bool inHello = false;
+ 
+        const uint bitPosMap[] =
+        {
+                23, 20, 22, 19, 21, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6
+        };
 
         void set_led(uint ledData) {
-            for (auto i = 0; i < 3; i++) {
-                // Left1, Left2, Left3, Right1, Right2, Right3
-                lightColors.setPixelColor(i, PicoLed::RGB(
-                        ((ledData >> bitPosMap[9 + i * 3]) & 1) * 255,
-                        ((ledData >> bitPosMap[9 + i * 3 + 1]) & 1) * 255,
-                        ((ledData >> bitPosMap[9 + i * 3 + 2]) & 1) * 255
-                )); // r
-                lightColors.setPixelColor(i + 3, PicoLed::RGB(
-                        ((ledData >> bitPosMap[i * 3]) & 1) * 255,
-                        ((ledData >> bitPosMap[i * 3 + 1]) & 1) * 255,
-                        ((ledData >> bitPosMap[i * 3 + 2]) & 1) * 255
-                )); // l
+            const uint8_t bitOffsets[6][3] = {{9,0,0}, {9,3,0}, {9,6,0}, {0,0,0}, {0,3,0}, {0,6,0}};
+            for (int i = 0; i < 6; i++) {
+                uint r = (ledData >> bitPosMap[bitOffsets[i][0] + bitOffsets[i][1]]) & 1;
+                uint g = (ledData >> bitPosMap[bitOffsets[i][0] + bitOffsets[i][1] + 1]) & 1;
+                uint b = (ledData >> bitPosMap[bitOffsets[i][0] + bitOffsets[i][1] + 2]) & 1;
+                leds[i].setPixelColor(0, PicoLed::RGB(r*255,g*255, b*255));
             }
-            lightColors.show();
+            
+            for (auto& led : leds) {
+                led.show();
+            }
         }
 
         void set_led_brightness(uint8_t brightness) {
-            lightColors.setBrightness(brightness);
+            for (auto& led : leds) {
+                led.setBrightness(brightness);
+            }
         }
 
         void show_mode_effect(uint8_t mode) {
@@ -129,49 +142,25 @@ namespace component {
             data->switches[0] = 0;
             data->switches[1] = 0;
 
-            inHello = !gpio_get(5);
-            do {
-                if (!inHello) break;
-
-                if (!gpio_get(PIN_MAP[7])) {
-                    reset_usb_boot(0, 0);
+            if (!gpio_get(BTN_COIN_PIN)) {
+                if (!coin) {
+                    data->coin[0].count++;
+                    data->coin[1].count++;
+                    coin = true;
                 }
-                if (!gpio_get(PIN_MAP[0])) {
-                    data->switches[0] += (1 << 9) + (1 << 6);
-                }
-
-                if (!gpio_get(PIN_MAP[1])) {
-                    if (!coin) {
-                        data->coin[0].count++;
-                        data->coin[1].count++;
-                        coin = true;
-                    }
-                } else {
-                    coin = false;
-                }
-
-                if (!gpio_get(PIN_MAP[6])) {
-                    if (!rg) {
-                        rg = true;
-                        uint8_t mode = config::cycle_mode();
-                        show_mode_effect(mode);
-                    }
-                } else {
-                    rg = false;
-                }
-
-            } while (false);
-
+            } else {
+                coin = false;
+            }
+            
             coin = false;
             rg = false;
 
-            for (auto i = 0; i < 10; i++) {
-                auto read = gpio_get(PIN_MAP[i]) ^ 1;
+            for (auto i = 0; i < 12; i++) {
+                auto read = gpio_get(PIN_MAP[i]) ^ PIN_BIT[i];
                 if (read) {
                     data->switches[SWITCH_INDEX[i]] += 1 << SWITCH_OFFSET[i];
                 }
             }
-
 
             if (hasI2cLever) {
                 uint8_t result1, result2;
@@ -186,11 +175,6 @@ namespace component {
                 finalResult = ~finalResult;
                 data->analog[0] = *(int16_t *) &finalResult;
                 data->rotary[0] = *(int16_t *) &finalResult;
-//                tud_cdc_write_str(std::to_string(finalResult).c_str());
-//                tud_cdc_write_char(' ');
-//                tud_cdc_write_str(std::to_string(result2).c_str());
-//                tud_cdc_write_char('\r');
-//                tud_cdc_write_char('\n');
             } else {
                 analog.update();
                 uint16_t raw = analog.getValue() << 4;
@@ -208,25 +192,25 @@ namespace component {
             data->modifier = 0;
             memset(data->keycodes, 0, sizeof(data->keycodes));
 
-            inHello = !gpio_get(5);
-            do {
-                if (!inHello) break;
+            // inHello = !gpio_get(5);
+            // do {
+            //     if (!inHello) break;
 
-                if (!gpio_get(PIN_MAP[7])) {
-                    reset_usb_boot(0, 0);
-                }
+            //     if (!gpio_get(PIN_MAP[7])) {
+            //         reset_usb_boot(0, 0);
+            //     }
 
-                if (!gpio_get(PIN_MAP[6])) {
-                    if (!rg) {
-                        rg = true;
-                        uint8_t mode = config::cycle_mode();
-                        show_mode_effect(mode);
-                    }
-                } else {
-                    rg = false;
-                }
+            //     if (!gpio_get(PIN_MAP[6])) {
+            //         if (!rg) {
+            //             rg = true;
+            //             uint8_t mode = config::cycle_mode();
+            //             show_mode_effect(mode);
+            //         }
+            //     } else {
+            //         rg = false;
+            //     }
 
-            } while (false);
+            // } while (false);
 
             rg = false;
 

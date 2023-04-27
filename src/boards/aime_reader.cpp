@@ -6,14 +6,14 @@
 namespace aime_reader {
     const component::serial::stream *stream;
 
-    PicoLed::PicoLedController getController() {
-        return card_light;
-    }
+    // PicoLed::PicoLedController getController() {
+    //     return card_light;
+    // }
 
-    void set_card_light(uint8_t r, uint8_t g, uint8_t b) {
-        card_light.fill(PicoLed::RGB(r, g, b));
-        card_light.show();
-    }
+    // void set_card_light(uint8_t r, uint8_t g, uint8_t b) {
+    //     card_light.fill(PicoLed::RGB(r, g, b));
+    //     card_light.show();
+    // }
 
     void init(const component::serial::stream *input) {
         stream = input;

@@ -33,8 +33,8 @@ namespace aime_reader {
         kNFCCMD_EXT_TO_NORMAL_MODE = 0xF5,
     };
 
-    PicoLed::PicoLedController getController();
-    void set_card_light(uint8_t r, uint8_t g, uint8_t b);
+    // PicoLed::PicoLedController getController();
+    // void set_card_light(uint8_t r, uint8_t g, uint8_t b);
     void init(const component::serial::stream *stream);
     void update();
 }

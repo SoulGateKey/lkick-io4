@@ -16,15 +16,15 @@ namespace component {
             using namespace component::config;
             uint8_t last_mode = 0;
 
-            auto aime_led = aime_reader::getController();
-            std::vector<PicoLed::Color> rainbow_palette;
-            rainbow_palette.push_back(PicoLed::RGB(255, 0, 0));
-            rainbow_palette.push_back(PicoLed::RGB(255, 255, 0));
-            rainbow_palette.push_back(PicoLed::RGB(0, 255, 0));
-            rainbow_palette.push_back(PicoLed::RGB(0, 255, 255));
-            rainbow_palette.push_back(PicoLed::RGB(0, 0, 255));
-            rainbow_palette.push_back(PicoLed::RGB(255, 0, 255));
-            PicoLed::Marquee effect_marquee(aime_led, rainbow_palette, 3.0, -2.0, 1.0);
+            // auto aime_led = aime_reader::getController();
+            // std::vector<PicoLed::Color> rainbow_palette;
+            // rainbow_palette.push_back(PicoLed::RGB(255, 0, 0));
+            // rainbow_palette.push_back(PicoLed::RGB(255, 255, 0));
+            // rainbow_palette.push_back(PicoLed::RGB(0, 255, 0));
+            // rainbow_palette.push_back(PicoLed::RGB(0, 255, 255));
+            // rainbow_palette.push_back(PicoLed::RGB(0, 0, 255));
+            // rainbow_palette.push_back(PicoLed::RGB(255, 0, 255));
+            // PicoLed::Marquee effect_marquee(aime_led, rainbow_palette, 3.0, -2.0, 1.0);
 
             tusb_init();
             while (true) {
@@ -34,14 +34,14 @@ namespace component {
                 switch (this_mode) {
                 case MODE::KEYBOARD:
                     if (last_mode != this_mode) {
-                        aime_led.setBrightness(0x2f);
+                        // aime_led.setBrightness(0x2f);
                         led_board::set_color(0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
                         using namespace component::ongeki_hardware;
-                        set_led(0xffffff);
-                        set_led_brightness(0x4f);
+                        // set_led(0xffffff);
+                        // set_led_brightness(0x4f);
                     }
-                    if (effect_marquee.animate())
-                        aime_led.show();
+                    // if (effect_marquee.animate())
+                        // aime_led.show();
 
                     component::ongeki_hardware::update_keyboard(&output_keyboard_data);
 
@@ -50,8 +50,8 @@ namespace component {
                     break;
                 case MODE::IO4:
                     if (last_mode != this_mode){
-                        aime_led.setBrightness(0xff);
-                        aime_reader::set_card_light(0, 0, 0);
+                        // aime_led.setBrightness(0xff);
+                        // aime_reader::set_card_light(0, 0, 0);
                         led_board::init_color();
                         using namespace component::ongeki_hardware;
                         set_led(0xffffff);
