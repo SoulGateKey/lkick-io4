@@ -12,8 +12,8 @@ pico_sdk_init()
 add_executable(LKICK main.cpp stdinclude.h)
 
 target_compile_definitions(LKICK PRIVATE
-	PICO_DEFAULT_UART_TX_PIN=16
-	PICO_DEFAULT_UART_RX_PIN=17
+	PICO_DEFAULT_UART_TX_PIN=13
+	PICO_DEFAULT_UART_RX_PIN=13
 	)
 target_sources(LKICK PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/main.cpp

@@ -247,7 +247,7 @@ char const* string_desc_arr [] =
                 // 3: Serials
                 "",
                 // 4: CDC1, Aime Reader
-                "AIME READER @COM1",
+                "AIME READER @COM1 NOUSE",
                 // 5: CDC2, Led Board
                 "LED BOARD @COM3",
                 // 6: IO4 Board Name
